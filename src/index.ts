@@ -5,7 +5,6 @@ import {
   AuthMethodScope,
   AuthMethodType,
   LIT_ABILITY,
-  LOG_LEVEL,
 } from '@lit-protocol/constants';
 import { ethers } from 'ethers';
 import {
@@ -23,15 +22,16 @@ import {
 } from '@lit-protocol/types';
 import { getSessionSigs } from './utils';
 import { LocalStorage } from 'node-localstorage';
-//@ts-ignore
+// @ts-expect-error we are trying to inject a global
 global.localStorage = new LocalStorage('./lit-session-storage');
-// @ts-ignore
-var localStorage = global.localStorage as LocalStorage;
+// @ts-expect-error assigning the global to a local variable
+const localStorage = global.localStorage as LocalStorage;
 
 export class LitClient {
   litNodeClient: LitJsSdk.LitNodeClientNodeJs | null = null;
   ethersWallet: ethers.Wallet | null = null;
-  private pkp: any = null;
+  private pkp: MintWithAuthResponse<ethers.ContractReceipt>['pkp'] | null =
+    null;
 
   /**
    * Initialize the SDK
@@ -63,7 +63,9 @@ export class LitClient {
     // Load PKP from storage if it exists
     const pkp = localStorage.getItem('pkp');
     if (pkp) {
-      client.pkp = JSON.parse(pkp);
+      client.pkp = JSON.parse(
+        pkp
+      ) as MintWithAuthResponse<ethers.ContractReceipt>['pkp'];
     }
 
     return client;
@@ -173,7 +175,9 @@ export class LitClient {
    */
   getPkp() {
     const pkp = localStorage.getItem('pkp');
-    return pkp ? JSON.parse(pkp) : null;
+    return pkp
+      ? (JSON.parse(pkp) as MintWithAuthResponse<ethers.ContractReceipt>['pkp'])
+      : null;
   }
 
   /**

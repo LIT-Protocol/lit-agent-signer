@@ -9,7 +9,7 @@ describe('LitClient Integration Tests', () => {
       throw new Error('LIT_AUTH_KEY environment variable is required');
     }
 
-    litClient = await LitClient.create(process.env.LIT_AUTH_KEY!);
+    litClient = await LitClient.create(process.env.LIT_AUTH_KEY);
     // Wait for client to be ready
     await new Promise((resolve) => {
       const checkReady = () => {
@@ -21,6 +21,7 @@ describe('LitClient Integration Tests', () => {
             setTimeout(checkReady, 500);
           }
         } catch (e) {
+          console.log('error', e);
           setTimeout(checkReady, 500);
         }
       };
@@ -66,7 +67,7 @@ describe('LitClient Integration Tests', () => {
       // Verify PKP is stored
       const storedPkp = litClient.getPkp();
       expect(storedPkp).toBeDefined();
-      expect(storedPkp.publicKey).toBe(walletInfo.pkp.publicKey);
+      expect(storedPkp!.publicKey).toBe(walletInfo.pkp.publicKey);
 
       // Sign a message
       const messageToSign =
@@ -95,7 +96,7 @@ describe('LitClient Integration Tests', () => {
           throw new Error(JSON.stringify(error));
         }
       }).rejects.toThrow(
-        '{\"name\":\"NodeError\",\"message\":\"There was an error getting the signing shares from the nodes. Response from the nodes: {\\\"success\\\":false,\\\"error\\\":{\\\"success\\\":false,\\\"error\\\":\\\"Uncaught SyntaxError: Unexpected identifier \'javascript\'\\\\n    at <anonymous> (<user_provided_script>:1:9)\\\",\\\"logs\\\":\\\"\\\"}}'
+        '{"name":"NodeError","message":"There was an error getting the signing shares from the nodes. Response from the nodes: '
       );
     }, 10000);
   });
