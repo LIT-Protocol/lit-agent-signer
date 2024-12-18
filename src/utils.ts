@@ -7,8 +7,11 @@ import {
   createSiweMessage,
   generateAuthSig,
 } from '@lit-protocol/auth-helpers';
+import { SessionSigsMap } from '@lit-protocol/types';
 
-export async function getSessionSigs(litClient: LitClient) {
+export async function getSessionSigs(
+  litClient: LitClient
+): Promise<SessionSigsMap> {
   if (!litClient.litNodeClient) {
     throw new Error('Lit Node Client not properly initialized');
   }

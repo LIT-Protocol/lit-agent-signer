@@ -15,7 +15,11 @@ import {
   generateAuthSig,
 } from '@lit-protocol/auth-helpers';
 import { LitContracts } from '@lit-protocol/contracts-sdk';
-import { ExecuteJsResponse } from '@lit-protocol/types';
+import {
+  ExecuteJsResponse,
+  MintWithAuthResponse,
+  SigResponse,
+} from '@lit-protocol/types';
 import { getSessionSigs } from './utils';
 if (typeof localStorage === 'undefined' || localStorage === null) {
   var LocalStorage = require('node-localstorage').LocalStorage;
@@ -32,11 +36,20 @@ export class LitClient {
    * @param authKey The authentication key
    * @returns A Promise that resolves to a new LitClient instance
    */
-  static async create(authKey: string): Promise<LitClient> {
+  static async create(
+    authKey: string,
+    {
+      litNetwork = LitNetwork.DatilDev,
+      debug = false,
+    }: {
+      litNetwork?: LitNetwork;
+      debug?: boolean;
+    } = {}
+  ): Promise<LitClient> {
     const client = new LitClient();
     client.litNodeClient = new LitJsSdk.LitNodeClientNodeJs({
-      litNetwork: LitNetwork.DatilDev,
-      debug: false,
+      litNetwork,
+      debug,
     });
     await client.litNodeClient.connect();
 
@@ -102,7 +115,7 @@ export class LitClient {
   /**
    * Create a new wallet
    */
-  async createWallet() {
+  async createWallet(): Promise<MintWithAuthResponse<ethers.ContractReceipt>> {
     if (!this.litNodeClient || !this.ethersWallet) {
       throw new Error('Client not properly initialized');
     }
@@ -165,7 +178,7 @@ export class LitClient {
   /**
    * Sign a message
    */
-  async sign({ toSign }: { toSign: string }) {
+  async sign({ toSign }: { toSign: string }): Promise<SigResponse> {
     if (!this.litNodeClient || !this.pkp) {
       throw new Error('Client not properly initialized or PKP not set');
     }
@@ -178,7 +191,7 @@ export class LitClient {
       toSign: ethers.utils.arrayify(toSign),
     });
 
-    return { signature: signingResult };
+    return signingResult;
   }
 
   /**
