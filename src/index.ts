@@ -5,7 +5,6 @@ import {
   AuthMethodScope,
   AuthMethodType,
   LIT_ABILITY,
-  LOG_LEVEL,
 } from '@lit-protocol/constants';
 import { ethers } from 'ethers';
 import {
@@ -23,10 +22,10 @@ import {
 } from '@lit-protocol/types';
 import { getSessionSigs } from './utils';
 import { LocalStorage } from 'node-localstorage';
-//@ts-ignore
+// @ts-expect-error we are trying to inject a global
 global.localStorage = new LocalStorage('./lit-session-storage');
-// @ts-ignore
-var localStorage = global.localStorage as LocalStorage;
+// @ts-expect-error assigning the global to a local variable
+const localStorage = global.localStorage as LocalStorage;
 
 export class LitClient {
   litNodeClient: LitJsSdk.LitNodeClientNodeJs | null = null;
