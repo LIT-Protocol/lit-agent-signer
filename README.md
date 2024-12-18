@@ -16,15 +16,15 @@ functionality, decryption, and more.
 ## Installation
 
 ```bash
-npm install lit-agent-signer
+npm install @lit-protocol/lit-agent-signer
 # or
-yarn add lit-agent-signer
+yarn add @lit-protocol/lit-agent-signer
 ```
 
 ## Quick Start
 
 ```typescript
-import { LitClient } from 'lit-agent-signer';
+import { LitClient } from '@lit-protocol/lit-agent-signer';
 
 // Initialize the client with your Lit auth key
 const client = await LitClient.create(process.env.LIT_AUTH_KEY);

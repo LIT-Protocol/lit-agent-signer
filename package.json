@@ -32,6 +32,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@lit-protocol/auth-helpers": "^6",
     "@lit-protocol/contracts-sdk": "^6",
