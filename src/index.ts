@@ -4,11 +4,11 @@ import {
   LIT_RPC,
   AuthMethodScope,
   AuthMethodType,
-  ProviderType,
+  LIT_ABILITY,
+  LOG_LEVEL,
 } from '@lit-protocol/constants';
 import { ethers } from 'ethers';
 import {
-  LitAbility,
   LitActionResource,
   LitPKPResource,
   createSiweMessage,
@@ -17,14 +17,16 @@ import {
 import { LitContracts } from '@lit-protocol/contracts-sdk';
 import {
   ExecuteJsResponse,
+  LIT_NETWORKS_KEYS,
   MintWithAuthResponse,
   SigResponse,
 } from '@lit-protocol/types';
 import { getSessionSigs } from './utils';
-if (typeof localStorage === 'undefined' || localStorage === null) {
-  var LocalStorage = require('node-localstorage').LocalStorage;
-  globalThis.localStorage = new LocalStorage('./lit-session-storage');
-}
+import { LocalStorage } from 'node-localstorage';
+//@ts-ignore
+global.localStorage = new LocalStorage('./lit-session-storage');
+// @ts-ignore
+var localStorage = global.localStorage as LocalStorage;
 
 export class LitClient {
   litNodeClient: LitJsSdk.LitNodeClientNodeJs | null = null;
@@ -42,7 +44,7 @@ export class LitClient {
       litNetwork = LitNetwork.DatilDev,
       debug = false,
     }: {
-      litNetwork?: LitNetwork;
+      litNetwork?: LIT_NETWORKS_KEYS;
       debug?: boolean;
     } = {}
   ): Promise<LitClient> {
@@ -122,8 +124,8 @@ export class LitClient {
 
     const contractClient = new LitContracts({
       signer: this.ethersWallet,
-      network: LitNetwork.DatilDev,
-      debug: true,
+      network: this.litNodeClient.config.litNetwork,
+      debug: this.litNodeClient.config.debug,
     });
     await contractClient.connect();
 
@@ -133,11 +135,11 @@ export class LitClient {
       resources: [
         {
           resource: new LitActionResource('*'),
-          ability: LitAbility.LitActionExecution,
+          ability: LIT_ABILITY.LitActionExecution,
         },
         {
           resource: new LitPKPResource('*'),
-          ability: LitAbility.PKPSigning,
+          ability: LIT_ABILITY.PKPSigning,
         },
       ],
       walletAddress: this.ethersWallet.address,
@@ -163,7 +165,6 @@ export class LitClient {
     // Save to storage
     localStorage.setItem('pkp', JSON.stringify(mintInfo.pkp));
     this.pkp = mintInfo.pkp;
-
     return mintInfo;
   }
 

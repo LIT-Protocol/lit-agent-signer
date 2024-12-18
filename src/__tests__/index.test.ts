@@ -95,7 +95,7 @@ describe('LitClient Integration Tests', () => {
           throw new Error(JSON.stringify(error));
         }
       }).rejects.toThrow(
-        '{"message":"There was an error getting the signing shares from the nodes","errorCode":"unknown_error"}'
+        '{\"name\":\"NodeError\",\"message\":\"There was an error getting the signing shares from the nodes. Response from the nodes: {\\\"success\\\":false,\\\"error\\\":{\\\"success\\\":false,\\\"error\\\":\\\"Uncaught SyntaxError: Unexpected identifier \'javascript\'\\\\n    at <anonymous> (<user_provided_script>:1:9)\\\",\\\"logs\\\":\\\"\\\"}}'
       );
     }, 10000);
   });
