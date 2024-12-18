@@ -1,4 +1,4 @@
-import { LitClient } from '../src';
+import { LitClient } from '../dist/index';
 import * as dotenv from 'dotenv';
 
 // Load environment variables

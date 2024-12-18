@@ -10,8 +10,8 @@
     "test": "jest --runInBand --silent=false",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write src/**/*.ts",
-    "example": "npx tsx examples/basic-usage.ts",
-    "minimalSigningExample": "npx tsx examples/minimal-signing.ts"
+    "example": "node build.js && npx tsx examples/basic-usage.ts",
+    "minimalSigningExample": "node build.js && npx tsx examples/minimal-signing.ts"
   },
   "keywords": [],
   "author": "",

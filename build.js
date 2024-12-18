@@ -1,21 +1,21 @@
-const esbuild = require("esbuild");
+const esbuild = require('esbuild');
 
 // Common build options
 const buildOptions = {
-  entryPoints: ["src/index.ts"],
+  entryPoints: ['src/index.ts'],
   bundle: true,
   sourcemap: true,
-  platform: "node",
-  mainFields: ["module", "main"],
-  target: ["es2020"],
+  platform: 'node',
+  mainFields: ['main', 'module'],
+  target: ['es2020'],
 };
 
 // Build CJS version
 esbuild
   .build({
     ...buildOptions,
-    outfile: "dist/index.js",
-    format: "cjs",
+    outfile: 'dist/index.js',
+    format: 'cjs',
   })
   .catch(() => process.exit(1));
 
@@ -23,13 +23,13 @@ esbuild
 esbuild
   .build({
     ...buildOptions,
-    outfile: "dist/index.esm.js",
-    format: "esm",
+    outfile: 'dist/index.esm.js',
+    format: 'esm',
   })
   .catch(() => process.exit(1));
 
 // Generate type definitions
-const { execSync } = require("child_process");
-execSync("tsc --emitDeclarationOnly --declaration --outDir dist", {
-  stdio: "inherit",
+const { execSync } = require('child_process');
+execSync('tsc --emitDeclarationOnly --declaration --outDir dist', {
+  stdio: 'inherit',
 });

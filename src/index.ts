@@ -5,6 +5,7 @@ import {
   AuthMethodScope,
   AuthMethodType,
   LIT_ABILITY,
+  LOG_LEVEL,
 } from '@lit-protocol/constants';
 import { ethers } from 'ethers';
 import {
@@ -164,7 +165,6 @@ export class LitClient {
     // Save to storage
     localStorage.setItem('pkp', JSON.stringify(mintInfo.pkp));
     this.pkp = mintInfo.pkp;
-
     return mintInfo;
   }
 
