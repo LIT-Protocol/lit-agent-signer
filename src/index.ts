@@ -1,9 +1,9 @@
 import * as LitJsSdk from '@lit-protocol/lit-node-client-nodejs';
 import {
-  LitNetwork,
+  LIT_NETWORK,
   LIT_RPC,
-  AuthMethodScope,
-  AuthMethodType,
+  AUTH_METHOD_SCOPE,
+  AUTH_METHOD_TYPE,
   LIT_ABILITY,
 } from '@lit-protocol/constants';
 import { ethers } from 'ethers';
@@ -41,7 +41,7 @@ export class LitClient {
   static async create(
     authKey: string,
     {
-      litNetwork = LitNetwork.DatilDev,
+      litNetwork = LIT_NETWORK.DatilDev,
       debug = false,
     }: {
       litNetwork?: LIT_NETWORKS_KEYS;
@@ -155,13 +155,13 @@ export class LitClient {
     });
 
     const authMethod = {
-      authMethodType: AuthMethodType.EthWallet,
+      authMethodType: AUTH_METHOD_TYPE.EthWallet,
       accessToken: JSON.stringify(authSig),
     };
 
     const mintInfo = await contractClient.mintWithAuth({
       authMethod: authMethod,
-      scopes: [AuthMethodScope.SignAnything],
+      scopes: [AUTH_METHOD_SCOPE.SignAnything],
     });
 
     // Save to storage
