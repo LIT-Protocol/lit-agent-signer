@@ -1,86 +1,92 @@
-const LitJsSdk = require("@lit-protocol/lit-node-client-nodejs");
-const {
+import * as LitJsSdk from '@lit-protocol/lit-node-client-nodejs';
+import {
   LitNetwork,
   LIT_RPC,
   AuthMethodScope,
   AuthMethodType,
   ProviderType,
-} = require("@lit-protocol/constants");
-const ethers = require("ethers");
-const {
+} from '@lit-protocol/constants';
+import { ethers } from 'ethers';
+import {
   LitAbility,
   LitActionResource,
   LitPKPResource,
   createSiweMessage,
   generateAuthSig,
-} = require("@lit-protocol/auth-helpers");
-const { LitContracts } = require("@lit-protocol/contracts-sdk");
-const { getSessionSigs } = require("./utils");
-
-// Replace localStorage with a simple in-memory store if not in Node environment
-let storage = typeof localStorage !== "undefined" ? localStorage : new Map();
+} from '@lit-protocol/auth-helpers';
+import { LitContracts } from '@lit-protocol/contracts-sdk';
+import { ExecuteJsResponse } from '@lit-protocol/types';
+import { getSessionSigs } from './utils';
+if (typeof localStorage === 'undefined' || localStorage === null) {
+  var LocalStorage = require('node-localstorage').LocalStorage;
+  globalThis.localStorage = new LocalStorage('./lit-session-storage');
+}
 
 export class LitClient {
-  private litNodeClient: typeof LitJsSdk.LitNodeClientNodeJs | null = null;
-  private ethersWallet: typeof ethers.Wallet | null = null;
+  litNodeClient: LitJsSdk.LitNodeClientNodeJs | null = null;
+  ethersWallet: ethers.Wallet | null = null;
   private pkp: any = null;
 
   /**
    * Initialize the SDK
+   * @param authKey The authentication key
+   * @returns A Promise that resolves to a new LitClient instance
    */
-  constructor() {
-    this.litNodeClient = new LitJsSdk.LitNodeClientNodeJs({
+  static async create(authKey: string): Promise<LitClient> {
+    const client = new LitClient();
+    client.litNodeClient = new LitJsSdk.LitNodeClientNodeJs({
       litNetwork: LitNetwork.DatilDev,
+      debug: false,
     });
-    this.litNodeClient.connect();
+    await client.litNodeClient.connect();
 
-    this.ethersWallet = new ethers.Wallet(
-      process.env.LIT_PYTHON_SDK_PRIVATE_KEY,
+    client.ethersWallet = new ethers.Wallet(
+      authKey,
       new ethers.providers.JsonRpcProvider(LIT_RPC.CHRONICLE_YELLOWSTONE)
     );
 
     // Load PKP from storage if it exists
-    const pkp =
-      storage instanceof Map ? storage.get("pkp") : storage.getItem("pkp");
+    const pkp = localStorage.getItem('pkp');
     if (pkp) {
-      this.pkp = JSON.parse(pkp);
+      client.pkp = JSON.parse(pkp);
     }
+
+    return client;
   }
+
+  private constructor() {}
 
   /**
    * Check if the client is ready
    */
-  isReady(): { ready: boolean } {
+  isReady(): boolean {
     if (!this.litNodeClient) {
-      throw new Error("LitNodeClient not initialized");
+      throw new Error('LitNodeClient not initialized');
     }
-    try {
-      return {
-        ready: this.litNodeClient.ready,
-      };
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        throw new Error(`Failed to check ready status: ${error.message}`);
-      }
-      throw error;
-    }
+    return this.litNodeClient.ready;
   }
 
   /**
    * Execute JavaScript code
    */
-  async executeJs({ code, jsParams }: { code: string; jsParams: any }) {
+  async executeJs({
+    code,
+    jsParams,
+  }: {
+    code: string;
+    jsParams: object;
+  }): Promise<ExecuteJsResponse> {
     if (!this.litNodeClient) {
-      throw new Error("LitNodeClient not initialized");
+      throw new Error('LitNodeClient not initialized');
     }
     try {
       if (!code) {
-        throw new Error("No code provided");
+        throw new Error('No code provided');
       }
 
       const sessionSigs = await getSessionSigs(this);
 
-      return await this.litNodeClient.executeJs({
+      return this.litNodeClient.executeJs({
         sessionSigs,
         code,
         jsParams,
@@ -98,27 +104,26 @@ export class LitClient {
    */
   async createWallet() {
     if (!this.litNodeClient || !this.ethersWallet) {
-      throw new Error("Client not properly initialized");
+      throw new Error('Client not properly initialized');
     }
 
     const contractClient = new LitContracts({
       signer: this.ethersWallet,
-      litNodeClient: this.litNodeClient,
       network: LitNetwork.DatilDev,
       debug: true,
     });
     await contractClient.connect();
 
     const toSign = await createSiweMessage({
-      uri: "sdk://createWallet",
+      uri: 'sdk://createWallet',
       expiration: new Date(Date.now() + 1000 * 60 * 10).toISOString(), // 10 minutes
       resources: [
         {
-          resource: new LitActionResource("*"),
+          resource: new LitActionResource('*'),
           ability: LitAbility.LitActionExecution,
         },
         {
-          resource: new LitPKPResource("*"),
+          resource: new LitPKPResource('*'),
           ability: LitAbility.PKPSigning,
         },
       ],
@@ -143,11 +148,7 @@ export class LitClient {
     });
 
     // Save to storage
-    if (storage instanceof Map) {
-      storage.set("pkp", JSON.stringify(mintInfo.pkp));
-    } else {
-      storage.setItem("pkp", JSON.stringify(mintInfo.pkp));
-    }
+    localStorage.setItem('pkp', JSON.stringify(mintInfo.pkp));
     this.pkp = mintInfo.pkp;
 
     return mintInfo;
@@ -157,8 +158,7 @@ export class LitClient {
    * Get the PKP
    */
   getPkp() {
-    const pkp =
-      storage instanceof Map ? storage.get("pkp") : storage.getItem("pkp");
+    const pkp = localStorage.getItem('pkp');
     return pkp ? JSON.parse(pkp) : null;
   }
 
@@ -167,7 +167,7 @@ export class LitClient {
    */
   async sign({ toSign }: { toSign: string }) {
     if (!this.litNodeClient || !this.pkp) {
-      throw new Error("Client not properly initialized or PKP not set");
+      throw new Error('Client not properly initialized or PKP not set');
     }
 
     const sessionSigs = await getSessionSigs(this);
@@ -179,5 +179,14 @@ export class LitClient {
     });
 
     return { signature: signingResult };
+  }
+
+  /**
+   * Disconnect the client and cleanup
+   */
+  async disconnect() {
+    if (this.litNodeClient) {
+      await this.litNodeClient.disconnect();
+    }
   }
 }

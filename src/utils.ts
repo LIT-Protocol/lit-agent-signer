@@ -1,25 +1,31 @@
-import { LitClient } from ".";
+import { LitClient } from '.';
 
-const {
+import {
   LitAbility,
   LitActionResource,
   LitPKPResource,
   createSiweMessage,
   generateAuthSig,
-} = require("@lit-protocol/auth-helpers");
+} from '@lit-protocol/auth-helpers';
 
-async function getSessionSigs(litClient: LitClient) {
+export async function getSessionSigs(litClient: LitClient) {
+  if (!litClient.litNodeClient) {
+    throw new Error('Lit Node Client not properly initialized');
+  }
+  if (!litClient.ethersWallet) {
+    throw new Error('Ethers Wallet not properly initialized');
+  }
   // get session sigs
   const sessionSigs = await litClient.litNodeClient.getSessionSigs({
-    chain: "ethereum",
+    chain: 'ethereum',
     expiration: new Date(Date.now() + 1000 * 60 * 10).toISOString(), // 10 minutes
     resourceAbilityRequests: [
       {
-        resource: new LitActionResource("*"),
+        resource: new LitActionResource('*'),
         ability: LitAbility.LitActionExecution,
       },
       {
-        resource: new LitPKPResource("*"),
+        resource: new LitPKPResource('*'),
         ability: LitAbility.PKPSigning,
       },
     ],
@@ -32,20 +38,16 @@ async function getSessionSigs(litClient: LitClient) {
         uri,
         expiration,
         resources: resourceAbilityRequests,
-        walletAddress: await litClient.ethersWallet.getAddress(),
-        nonce: await litClient.litNodeClient.getLatestBlockhash(),
+        walletAddress: await litClient.ethersWallet!.getAddress(),
+        nonce: await litClient.litNodeClient!.getLatestBlockhash(),
         litNodeClient: litClient.litNodeClient,
       });
 
       return await generateAuthSig({
-        signer: litClient.ethersWallet,
+        signer: litClient.ethersWallet!,
         toSign,
       });
     },
   });
   return sessionSigs;
 }
-
-module.exports = {
-  getSessionSigs,
-};

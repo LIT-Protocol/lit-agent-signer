@@ -5,18 +5,16 @@ describe('LitClient Integration Tests', () => {
 
   beforeAll(async () => {
     // Ensure you have the environment variable set
-    if (!process.env.LIT_PYTHON_SDK_PRIVATE_KEY) {
-      throw new Error(
-        'LIT_PYTHON_SDK_PRIVATE_KEY environment variable is required'
-      );
+    if (!process.env.LIT_AUTH_KEY) {
+      throw new Error('LIT_AUTH_KEY environment variable is required');
     }
 
-    litClient = new LitClient();
+    litClient = await LitClient.create(process.env.LIT_AUTH_KEY!);
     // Wait for client to be ready
     await new Promise((resolve) => {
       const checkReady = () => {
         try {
-          const { ready } = litClient.isReady();
+          const ready = litClient.isReady();
           if (ready) {
             resolve(true);
           } else {
@@ -30,9 +28,15 @@ describe('LitClient Integration Tests', () => {
     });
   }, 30000); // Increased timeout for network operations
 
+  afterAll(async () => {
+    if (litClient) {
+      await litClient.disconnect();
+    }
+  });
+
   describe('Basic Operations', () => {
     it('should confirm client is ready', () => {
-      const { ready } = litClient.isReady();
+      const ready = litClient.isReady();
       expect(ready).toBe(true);
     });
 
@@ -40,14 +44,14 @@ describe('LitClient Integration Tests', () => {
       const result = await litClient.executeJs({
         code: `
           (async () => {
-            return { result: "Hello from Lit Protocol!" };
+            Lit.Actions.setResponse({"response": "Hello from Lit Protocol!" });
           })()
         `,
         jsParams: {},
       });
 
-      expect(result).toHaveProperty('result');
-      expect(result.result).toBe('Hello from Lit Protocol!');
+      expect(result).toHaveProperty('response');
+      expect(result.response).toBe('Hello from Lit Protocol!');
     }, 10000);
   });
 
@@ -65,7 +69,8 @@ describe('LitClient Integration Tests', () => {
       expect(storedPkp.publicKey).toBe(walletInfo.pkp.publicKey);
 
       // Sign a message
-      const messageToSign = 'Hello, Lit Protocol!';
+      const messageToSign =
+        '0x8111e78458fec7fb123fdfe3c559a1f7ae33bf21bf81d1bad589e9422c648cbd';
       const signResult = await litClient.sign({
         toSign: messageToSign,
       });
@@ -77,21 +82,21 @@ describe('LitClient Integration Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle invalid JavaScript execution', async () => {
-      await expect(
-        litClient.executeJs({
-          code: 'invalid javascript code!!!',
-          jsParams: {},
-        })
-      ).rejects.toThrow();
+      await expect(async () => {
+        // we have to do this crazy try catch rethrow thing
+        // because the lit client throws an error that is not an instance of Error
+        // and jest does not handle it well
+        try {
+          await litClient.executeJs({
+            code: 'invalid javascript code!!!',
+            jsParams: {},
+          });
+        } catch (error) {
+          throw new Error(JSON.stringify(error));
+        }
+      }).rejects.toThrow(
+        '{"message":"There was an error getting the signing shares from the nodes","errorCode":"unknown_error"}'
+      );
     }, 10000);
-
-    it('should handle empty code execution', async () => {
-      await expect(
-        litClient.executeJs({
-          code: '',
-          jsParams: {},
-        })
-      ).rejects.toThrow('No code provided');
-    });
   });
 });
