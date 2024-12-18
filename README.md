@@ -2,6 +2,9 @@
 
 A lightweight SDK for signing transactions and messages with Lit Protocol. This SDK simplifies the process of creating wallets and signing transactions using Lit's Programmable Key Pairs (PKPs).
 
+This SDK is a wrapper around our [full-featured SDK](https://github.com/lit-protocol/js-sdk) which also supports client-side functionality, decryption, and more.
+functionality, decryption, and more.
+
 ## Features
 
 - 🔑 Easy wallet creation and management
