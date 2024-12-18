@@ -1,0 +1,38 @@
+{
+  "name": "lit-signer",
+  "version": "0.1.0",
+  "description": "Makes signing transactions and messages with Lit Protocol easy",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "node build.js",
+    "test": "jest --runInBand",
+    "lint": "eslint src",
+    "format": "prettier --write src/**/*.ts",
+    "prepare": "npm run build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@babel/preset-env": "^7.24.0",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.24",
+    "dotenv": "^16.0.3",
+    "esbuild": "^0.20.1",
+    "jest": "^29.7.0",
+    "prettier": "^3.4.2",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.3.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@lit-protocol/auth-helpers": "^7.0.2",
+    "@lit-protocol/contracts-sdk": "^7.0.2",
+    "@lit-protocol/lit-node-client-nodejs": "^7.0.2"
+  }
+}
