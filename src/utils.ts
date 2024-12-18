@@ -1,7 +1,7 @@
 import { LitClient } from '.';
 
+import { LIT_ABILITY } from '@lit-protocol/constants';
 import {
-  LitAbility,
   LitActionResource,
   LitPKPResource,
   createSiweMessage,
@@ -25,11 +25,11 @@ export async function getSessionSigs(
     resourceAbilityRequests: [
       {
         resource: new LitActionResource('*'),
-        ability: LitAbility.LitActionExecution,
+        ability: LIT_ABILITY.LitActionExecution,
       },
       {
         resource: new LitPKPResource('*'),
-        ability: LitAbility.PKPSigning,
+        ability: LIT_ABILITY.PKPSigning,
       },
     ],
     authNeededCallback: async ({
