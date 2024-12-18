@@ -1,5 +1,5 @@
 {
-  "name": "lit-serverside-signer",
+  "name": "@lit-protocol/lit-agent-signer",
   "version": "0.1.0",
   "description": "Makes signing transactions and messages with Lit Protocol easy",
   "main": "dist/index.js",
