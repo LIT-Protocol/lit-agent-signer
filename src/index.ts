@@ -30,7 +30,8 @@ const localStorage = global.localStorage as LocalStorage;
 export class LitClient {
   litNodeClient: LitJsSdk.LitNodeClientNodeJs | null = null;
   ethersWallet: ethers.Wallet | null = null;
-  private pkp: any = null;
+  private pkp: MintWithAuthResponse<ethers.ContractReceipt>['pkp'] | null =
+    null;
 
   /**
    * Initialize the SDK
@@ -62,7 +63,9 @@ export class LitClient {
     // Load PKP from storage if it exists
     const pkp = localStorage.getItem('pkp');
     if (pkp) {
-      client.pkp = JSON.parse(pkp);
+      client.pkp = JSON.parse(
+        pkp
+      ) as MintWithAuthResponse<ethers.ContractReceipt>['pkp'];
     }
 
     return client;
@@ -172,7 +175,9 @@ export class LitClient {
    */
   getPkp() {
     const pkp = localStorage.getItem('pkp');
-    return pkp ? JSON.parse(pkp) : null;
+    return pkp
+      ? (JSON.parse(pkp) as MintWithAuthResponse<ethers.ContractReceipt>['pkp'])
+      : null;
   }
 
   /**
