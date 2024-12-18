@@ -14,7 +14,7 @@ async function main() {
     toSign:
       '0x8111e78458fec7fb123fdfe3c559a1f7ae33bf21bf81d1bad589e9422c648cbd',
   });
-  console.log('✓ Message signed:', signedTxn);
+  console.log('✓ Transaction signed:', signedTxn);
 }
 
 main()
