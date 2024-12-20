@@ -23,7 +23,6 @@ import {
 } from '@lit-protocol/types';
 import { getSessionSigs } from './utils';
 import { LocalStorage } from 'node-localstorage';
-import * as fs from 'fs';
 
 // @ts-expect-error we are trying to inject a global
 global.localStorage = new LocalStorage('./lit-session-storage');
