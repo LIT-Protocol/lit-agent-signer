@@ -4,6 +4,30 @@ import { LIT_RPC, AUTH_METHOD_SCOPE, LIT_NETWORK } from '@lit-protocol/constants
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { getSessionSigs } from '../utils';
 import { localStorage } from '../index';
+import { SessionSigsMap } from '@lit-protocol/types';
+
+interface NodeSignature {
+  sig: string;
+  derivedVia: string;
+  signedMessage: string;
+  address: string;
+  algo: string;
+}
+
+interface Capability {
+  sig: string;
+  derivedVia: string;
+  signedMessage: string;
+  address: string;
+}
+
+interface SignedMessageContent {
+  capabilities: Capability[];
+  sessionKey: string;
+  resourceAbilityRequests: any[];
+  issuedAt: string;
+  expiration: string;
+}
 
 describe('LitClient Integration Tests', () => {
   beforeAll(() => {
@@ -96,7 +120,7 @@ describe('LitClient Integration Tests', () => {
         await provider.waitForTransaction(addResult.transactionHash, 2);
 
         const isPermitted = await litClient.litContracts?.pkpPermissionsContractUtils.read.isPermittedAction(
-          walletInfo.pkp.tokenId,
+          walletInfo.pkp.tokenId.toString(),
           ipfsId
         );
         expect(isPermitted).toBe(true);
@@ -198,7 +222,7 @@ describe('LitClient Integration Tests', () => {
         await provider.waitForTransaction(addResult.transactionHash, 2);
 
         const isPermitted = await litClient.litContracts?.pkpPermissionsContractUtils.read.isPermittedAction(
-          walletInfo.pkp.tokenId,
+          walletInfo.pkp.tokenId.toString(),
           ipfsId
         );
         expect(isPermitted).toBe(true);
@@ -218,7 +242,7 @@ describe('LitClient Integration Tests', () => {
       });
 
       it('should mint and store capacity credits', async () => {
-        const walletInfo = await litClient.createWallet();
+        await litClient.createWallet();
         const capacityCreditId = litClient.getCapacityCreditId();
         expect(capacityCreditId).toBeDefined();
         expect(typeof capacityCreditId).toBe('string');
@@ -238,29 +262,30 @@ describe('LitClient Integration Tests', () => {
       }, 30000);
 
       it('should use capacity credits in session signatures', async () => {
-        const walletInfo = await litClient.createWallet();
+        await litClient.createWallet();
         const capacityCreditId = litClient.getCapacityCreditId();
         console.log('DatilTest Network:', litClient.getNetwork());
         console.log('DatilTest Capacity Credit ID:', capacityCreditId);
         expect(litClient.getNetwork()).toBe(LIT_NETWORK.DatilTest);
         expect(capacityCreditId).toBeDefined();
 
-        const sessionSigs = await getSessionSigs(litClient);
+        const sessionSigs: SessionSigsMap = await getSessionSigs(litClient);
         console.log('DatilTest Session Sigs:', JSON.stringify(sessionSigs, null, 2));
         expect(sessionSigs).toBeDefined();
         
         // Check for capacity delegation in the capabilities
-        const anyNode = Object.values(sessionSigs)[0];
+        const anyNode = Object.values(sessionSigs)[0] as NodeSignature;
         expect(anyNode).toBeDefined();
-        const capabilities = JSON.parse(anyNode.signedMessage).capabilities;
+        const parsedMessage = JSON.parse(anyNode.signedMessage) as SignedMessageContent;
+        const capabilities = parsedMessage.capabilities;
         expect(capabilities).toBeDefined();
         
         // Find the capacity delegation capability
-        const capacityDelegation = capabilities.find((cap: any) => 
+        const capacityDelegation = capabilities.find((cap: Capability) => 
           cap.signedMessage.includes(`lit-ratelimitincrease://${capacityCreditId}`)
         );
         expect(capacityDelegation).toBeDefined();
-        expect(capacityDelegation.derivedVia).toBe('web3.eth.personal.sign');
+        expect(capacityDelegation?.derivedVia).toBe('web3.eth.personal.sign');
       }, 60000);
     });
   });
