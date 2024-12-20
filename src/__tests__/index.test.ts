@@ -6,6 +6,19 @@ import { getSessionSigs } from '../utils';
 import { localStorage } from '../index';
 import { SessionSigsMap } from '@lit-protocol/types';
 
+interface PKP {
+  tokenId: ethers.BigNumber;
+  publicKey: string;
+  ethAddress: string;
+}
+
+interface WalletInfo {
+  pkp: PKP;
+  tx: ethers.ContractTransaction;
+  tokenId: ethers.BigNumber;
+  res: any;
+}
+
 interface NodeSignature {
   sig: string;
   derivedVia: string;
@@ -97,7 +110,7 @@ describe('LitClient Integration Tests', () => {
 
     describe('Wallet Operations', () => {
       it('should create a wallet and sign a message', async () => {
-        const walletInfo = await litClient.createWallet();
+        const walletInfo: WalletInfo = await litClient.createWallet();
         expect(walletInfo.pkp).toBeDefined();
 
         const messageToSign = '0x8111e78458fec7fb123fdfe3c559a1f7ae33bf21bf81d1bad589e9422c648cbd';
@@ -108,7 +121,7 @@ describe('LitClient Integration Tests', () => {
 
     describe('PKP Actions', () => {
       it('should add and verify a permitted action', async () => {
-        const walletInfo = await litClient.createWallet();
+        const walletInfo: WalletInfo = await litClient.createWallet();
         const provider = new ethers.providers.JsonRpcProvider(LIT_RPC.CHRONICLE_YELLOWSTONE);
         await provider.waitForTransaction(walletInfo.tx.hash, 2);
 
@@ -120,7 +133,7 @@ describe('LitClient Integration Tests', () => {
         await provider.waitForTransaction(addResult.transactionHash, 2);
 
         const isPermitted = await litClient.litContracts?.pkpPermissionsContractUtils.read.isPermittedAction(
-          walletInfo.pkp.tokenId.toString(),
+          walletInfo.pkp.tokenId.toHexString(),
           ipfsId
         );
         expect(isPermitted).toBe(true);
@@ -199,7 +212,7 @@ describe('LitClient Integration Tests', () => {
 
     describe('Wallet Operations', () => {
       it('should create a wallet and sign a message', async () => {
-        const walletInfo = await litClient.createWallet();
+        const walletInfo: WalletInfo = await litClient.createWallet();
         expect(walletInfo.pkp).toBeDefined();
 
         const messageToSign = '0x8111e78458fec7fb123fdfe3c559a1f7ae33bf21bf81d1bad589e9422c648cbd';
@@ -210,7 +223,7 @@ describe('LitClient Integration Tests', () => {
 
     describe('PKP Actions', () => {
       it('should add and verify a permitted action', async () => {
-        const walletInfo = await litClient.createWallet();
+        const walletInfo: WalletInfo = await litClient.createWallet();
         const provider = new ethers.providers.JsonRpcProvider(LIT_RPC.CHRONICLE_YELLOWSTONE);
         await provider.waitForTransaction(walletInfo.tx.hash, 2);
 
@@ -222,7 +235,7 @@ describe('LitClient Integration Tests', () => {
         await provider.waitForTransaction(addResult.transactionHash, 2);
 
         const isPermitted = await litClient.litContracts?.pkpPermissionsContractUtils.read.isPermittedAction(
-          walletInfo.pkp.tokenId.toString(),
+          walletInfo.pkp.tokenId.toHexString(),
           ipfsId
         );
         expect(isPermitted).toBe(true);
