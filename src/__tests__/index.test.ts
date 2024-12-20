@@ -1,27 +1,26 @@
 import { LitClient } from '../index';
 import { ethers } from 'ethers';
 import { LIT_RPC, AUTH_METHOD_SCOPE, LIT_NETWORK } from '@lit-protocol/constants';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { getSessionSigs } from '../utils';
 import { localStorage } from '../index';
 
 describe('LitClient Integration Tests', () => {
   beforeAll(() => {
-    const fs = require('fs');
     // Clear all storage before any tests run
-    if (fs.existsSync('./lit-session-storage')) {
-      fs.rmSync('./lit-session-storage', { recursive: true, force: true });
+    if (existsSync('./lit-session-storage')) {
+      rmSync('./lit-session-storage', { recursive: true, force: true });
     }
-    fs.mkdirSync('./lit-session-storage');
+    mkdirSync('./lit-session-storage');
     // Initialize empty files
-    fs.writeFileSync('./lit-session-storage/pkp', '');
-    fs.writeFileSync('./lit-session-storage/capacityCreditId', '');
+    writeFileSync('./lit-session-storage/pkp', '');
+    writeFileSync('./lit-session-storage/capacityCreditId', '');
   });
 
   afterAll(() => {
-    const fs = require('fs');
     // Clean up after all tests
-    if (fs.existsSync('./lit-session-storage')) {
-      fs.rmSync('./lit-session-storage', { recursive: true, force: true });
+    if (existsSync('./lit-session-storage')) {
+      rmSync('./lit-session-storage', { recursive: true, force: true });
     }
   });
 
@@ -106,15 +105,14 @@ describe('LitClient Integration Tests', () => {
 
     describe('Capacity Credits', () => {
       beforeEach(() => {
-        const fs = require('fs');
         // Create directory if it doesn't exist
-        if (!fs.existsSync('./lit-session-storage')) {
-          fs.mkdirSync('./lit-session-storage');
+        if (!existsSync('./lit-session-storage')) {
+          mkdirSync('./lit-session-storage');
         }
         // Clear all storage including lit-session-storage
         localStorage.clear();
-        fs.rmSync('./lit-session-storage', { recursive: true, force: true });
-        fs.mkdirSync('./lit-session-storage');
+        rmSync('./lit-session-storage', { recursive: true, force: true });
+        mkdirSync('./lit-session-storage');
       });
 
       it('should not mint capacity credits on dev network', async () => {
@@ -209,15 +207,14 @@ describe('LitClient Integration Tests', () => {
 
     describe('Capacity Credits', () => {
       beforeEach(() => {
-        const fs = require('fs');
         // Create directory if it doesn't exist
-        if (!fs.existsSync('./lit-session-storage')) {
-          fs.mkdirSync('./lit-session-storage');
+        if (!existsSync('./lit-session-storage')) {
+          mkdirSync('./lit-session-storage');
         }
         // Clear all storage including lit-session-storage
         localStorage.clear();
-        fs.rmSync('./lit-session-storage', { recursive: true, force: true });
-        fs.mkdirSync('./lit-session-storage');
+        rmSync('./lit-session-storage', { recursive: true, force: true });
+        mkdirSync('./lit-session-storage');
       });
 
       it('should mint and store capacity credits', async () => {
