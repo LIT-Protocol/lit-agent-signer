@@ -3,16 +3,9 @@ import {
   LIT_NETWORK,
   LIT_RPC,
   AUTH_METHOD_SCOPE,
-  AUTH_METHOD_TYPE,
-  LIT_ABILITY,
+  AUTH_METHOD_SCOPE_VALUES,
 } from '@lit-protocol/constants';
 import { ethers } from 'ethers';
-import {
-  LitActionResource,
-  LitPKPResource,
-  createSiweMessage,
-  generateAuthSig,
-} from '@lit-protocol/auth-helpers';
 import { LitContracts } from '@lit-protocol/contracts-sdk';
 import {
   ExecuteJsResponse,
@@ -20,18 +13,22 @@ import {
   MintWithAuthResponse,
   SigResponse,
 } from '@lit-protocol/types';
-import { getSessionSigs } from './utils';
 import { LocalStorage } from 'node-localstorage';
+
+import { getSessionSigs } from './utils';
+
 // @ts-expect-error we are trying to inject a global
 global.localStorage = new LocalStorage('./lit-session-storage');
 // @ts-expect-error assigning the global to a local variable
-const localStorage = global.localStorage as LocalStorage;
+export const localStorage = global.localStorage as LocalStorage;
 
 export class LitClient {
   litNodeClient: LitJsSdk.LitNodeClientNodeJs | null = null;
   ethersWallet: ethers.Wallet | null = null;
+  litContracts: LitContracts | null = null;
   private pkp: MintWithAuthResponse<ethers.ContractReceipt>['pkp'] | null =
     null;
+  private capacityCreditId: string | null = null;
 
   /**
    * Initialize the SDK
@@ -60,12 +57,27 @@ export class LitClient {
       new ethers.providers.JsonRpcProvider(LIT_RPC.CHRONICLE_YELLOWSTONE)
     );
 
-    // Load PKP from storage if it exists
-    const pkp = localStorage.getItem('pkp');
-    if (pkp) {
-      client.pkp = JSON.parse(
-        pkp
-      ) as MintWithAuthResponse<ethers.ContractReceipt>['pkp'];
+    client.litContracts = new LitContracts({
+      signer: client.ethersWallet,
+      network: litNetwork,
+      debug,
+    });
+    await client.litContracts.connect();
+
+    // Load PKP and capacity credit ID from storage
+    try {
+      const pkp = localStorage.getItem('pkp');
+      const capacityCreditId = localStorage.getItem('capacityCreditId');
+      
+      if (pkp) {
+        client.pkp = JSON.parse(pkp) as MintWithAuthResponse<ethers.ContractReceipt>['pkp'];
+      }
+      if (capacityCreditId) {
+        client.capacityCreditId = capacityCreditId;
+      }
+    } catch (error) {
+      // If storage files don't exist yet, that's okay - we'll create them when needed
+      console.log('Storage not initialized yet: ', error);
     }
 
     return client;
@@ -119,54 +131,31 @@ export class LitClient {
   /**
    * Create a new wallet
    */
-  async createWallet(): Promise<MintWithAuthResponse<ethers.ContractReceipt>> {
-    if (!this.litNodeClient || !this.ethersWallet) {
+  async createWallet(): Promise<{
+    pkp: { tokenId: string; publicKey: string; ethAddress: string };
+    tx: ethers.ContractTransaction;
+    tokenId: string;
+    res: MintWithAuthResponse<ethers.ContractReceipt>;
+  }> {
+    if (!this.litContracts || !this.ethersWallet) {
       throw new Error('Client not properly initialized');
     }
 
-    const contractClient = new LitContracts({
-      signer: this.ethersWallet,
-      network: this.litNodeClient.config.litNetwork,
-      debug: this.litNodeClient.config.debug,
-    });
-    await contractClient.connect();
-
-    const toSign = await createSiweMessage({
-      uri: 'sdk://createWallet',
-      expiration: new Date(Date.now() + 1000 * 60 * 10).toISOString(), // 10 minutes
-      resources: [
-        {
-          resource: new LitActionResource('*'),
-          ability: LIT_ABILITY.LitActionExecution,
-        },
-        {
-          resource: new LitPKPResource('*'),
-          ability: LIT_ABILITY.PKPSigning,
-        },
-      ],
-      walletAddress: this.ethersWallet.address,
-      nonce: await this.litNodeClient.getLatestBlockhash(),
-      litNodeClient: this.litNodeClient,
-    });
-
-    const authSig = await generateAuthSig({
-      signer: this.ethersWallet,
-      toSign,
-    });
-
-    const authMethod = {
-      authMethodType: AUTH_METHOD_TYPE.EthWallet,
-      accessToken: JSON.stringify(authSig),
-    };
-
-    const mintInfo = await contractClient.mintWithAuth({
-      authMethod: authMethod,
-      scopes: [AUTH_METHOD_SCOPE.SignAnything],
-    });
+    const mintInfo = await this.litContracts.pkpNftContractUtils.write.mint();
 
     // Save to storage
     localStorage.setItem('pkp', JSON.stringify(mintInfo.pkp));
     this.pkp = mintInfo.pkp;
+
+    if (this.litContracts.network === LIT_NETWORK.DatilTest || this.litContracts.network === LIT_NETWORK.Datil) {
+      const capacityCreditInfo = await this.litContracts.mintCapacityCreditsNFT({
+        requestsPerKilosecond: 10,
+        daysUntilUTCMidnightExpiration: 1,
+      });
+      localStorage.setItem("capacityCreditId", capacityCreditInfo.capacityTokenIdStr);
+      this.capacityCreditId = capacityCreditInfo.capacityTokenIdStr;
+    }
+
     return mintInfo;
   }
 
@@ -178,6 +167,27 @@ export class LitClient {
     return pkp
       ? (JSON.parse(pkp) as MintWithAuthResponse<ethers.ContractReceipt>['pkp'])
       : null;
+  }
+
+  /**
+   * Add a permitted action to the PKP
+   */
+  async addPermittedAction({
+    ipfsId,
+    scopes = [AUTH_METHOD_SCOPE.SignAnything],
+  }: {
+    ipfsId: string;
+    scopes?: AUTH_METHOD_SCOPE_VALUES[];
+  }) {
+    if (!this.ethersWallet || !this.pkp || !this.litContracts) {
+      throw new Error('Client not properly initialized or PKP not set');
+    }
+
+    return this.litContracts.addPermittedAction({
+      ipfsId,
+      authMethodScopes: scopes,
+      pkpTokenId: this.pkp.tokenId,
+    });
   }
 
   /**
@@ -206,5 +216,26 @@ export class LitClient {
     if (this.litNodeClient) {
       await this.litNodeClient.disconnect();
     }
+  }
+
+  /**
+   * Get permitted auth methods for the PKP
+   */
+  async getPermittedAuthMethods() {
+    if (!this.litNodeClient || !this.ethersWallet || !this.pkp || !this.litContracts) {
+      throw new Error('Client not properly initialized or PKP not set');
+    }
+
+    return this.litContracts.pkpPermissionsContract.read.getPermittedAuthMethods(
+      this.pkp.tokenId
+    );
+  }
+
+  getCapacityCreditId() {
+    return this.capacityCreditId;
+  }
+
+  getNetwork() {
+    return this.litContracts?.network;
   }
 }
