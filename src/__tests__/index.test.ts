@@ -4,10 +4,11 @@ import { LIT_RPC, AUTH_METHOD_SCOPE, LIT_NETWORK } from '@lit-protocol/constants
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { getSessionSigs } from '../utils';
 import { localStorage } from '../index';
-import { SessionSigsMap } from '@lit-protocol/types';
+import { SessionSigsMap, MintWithAuthResponse } from '@lit-protocol/types';
+import { LitResourceAbilityRequest } from '@lit-protocol/auth-helpers';
 
 interface PKP {
-  tokenId: ethers.BigNumber;
+  tokenId: string;
   publicKey: string;
   ethAddress: string;
 }
@@ -15,8 +16,8 @@ interface PKP {
 interface WalletInfo {
   pkp: PKP;
   tx: ethers.ContractTransaction;
-  tokenId: ethers.BigNumber;
-  res: any;
+  tokenId: string;
+  res: MintWithAuthResponse<ethers.ContractReceipt>;
 }
 
 interface NodeSignature {
@@ -37,7 +38,7 @@ interface Capability {
 interface SignedMessageContent {
   capabilities: Capability[];
   sessionKey: string;
-  resourceAbilityRequests: any[];
+  resourceAbilityRequests: LitResourceAbilityRequest[];
   issuedAt: string;
   expiration: string;
 }
@@ -133,7 +134,7 @@ describe('LitClient Integration Tests', () => {
         await provider.waitForTransaction(addResult.transactionHash, 2);
 
         const isPermitted = await litClient.litContracts?.pkpPermissionsContractUtils.read.isPermittedAction(
-          walletInfo.pkp.tokenId.toHexString(),
+          walletInfo.pkp.tokenId,
           ipfsId
         );
         expect(isPermitted).toBe(true);
@@ -153,7 +154,8 @@ describe('LitClient Integration Tests', () => {
       });
 
       it('should not mint capacity credits on dev network', async () => {
-        const walletInfo = await litClient.createWallet();
+        const walletInfo: WalletInfo = await litClient.createWallet();
+        expect(walletInfo.pkp).toBeDefined();
         console.log('DatilDev Network:', litClient.getNetwork());
         const capacityCreditId = litClient.getCapacityCreditId();
         console.log('DatilDev Capacity Credit ID:', capacityCreditId);
@@ -235,7 +237,7 @@ describe('LitClient Integration Tests', () => {
         await provider.waitForTransaction(addResult.transactionHash, 2);
 
         const isPermitted = await litClient.litContracts?.pkpPermissionsContractUtils.read.isPermittedAction(
-          walletInfo.pkp.tokenId.toHexString(),
+          walletInfo.pkp.tokenId,
           ipfsId
         );
         expect(isPermitted).toBe(true);

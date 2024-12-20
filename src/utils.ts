@@ -1,4 +1,4 @@
-import { LitClient, localStorage } from '.';
+import { LitClient } from '.';
 
 import { LIT_ABILITY, LIT_NETWORK } from '@lit-protocol/constants';
 import {

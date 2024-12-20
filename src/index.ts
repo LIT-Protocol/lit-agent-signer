@@ -3,17 +3,9 @@ import {
   LIT_NETWORK,
   LIT_RPC,
   AUTH_METHOD_SCOPE,
-  AUTH_METHOD_TYPE,
-  LIT_ABILITY,
   AUTH_METHOD_SCOPE_VALUES,
 } from '@lit-protocol/constants';
 import { ethers } from 'ethers';
-import {
-  LitActionResource,
-  LitPKPResource,
-  createSiweMessage,
-  generateAuthSig,
-} from '@lit-protocol/auth-helpers';
 import { LitContracts } from '@lit-protocol/contracts-sdk';
 import {
   ExecuteJsResponse,
@@ -21,8 +13,9 @@ import {
   MintWithAuthResponse,
   SigResponse,
 } from '@lit-protocol/types';
-import { getSessionSigs } from './utils';
 import { LocalStorage } from 'node-localstorage';
+
+import { getSessionSigs } from './utils';
 
 // @ts-expect-error we are trying to inject a global
 global.localStorage = new LocalStorage('./lit-session-storage');
@@ -84,7 +77,7 @@ export class LitClient {
       }
     } catch (error) {
       // If storage files don't exist yet, that's okay - we'll create them when needed
-      console.log('Storage not initialized yet');
+      console.log('Storage not initialized yet: ', error);
     }
 
     return client;
@@ -139,10 +132,10 @@ export class LitClient {
    * Create a new wallet
    */
   async createWallet(): Promise<{
-    pkp: { tokenId: any; publicKey: string; ethAddress: string };
+    pkp: { tokenId: string; publicKey: string; ethAddress: string };
     tx: ethers.ContractTransaction;
-    tokenId: any;
-    res: any;
+    tokenId: string;
+    res: MintWithAuthResponse<ethers.ContractReceipt>;
   }> {
     if (!this.litContracts || !this.ethersWallet) {
       throw new Error('Client not properly initialized');
