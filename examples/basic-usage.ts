@@ -1,5 +1,6 @@
 import { LitClient } from '../dist/index';
 import * as dotenv from 'dotenv';
+import { LIT_NETWORK } from '@lit-protocol/constants';
 
 // Load environment variables
 dotenv.config();
@@ -13,7 +14,7 @@ async function main() {
     }
 
     console.log('🚀 Initializing Lit client...');
-    const client = await LitClient.create(authKey);
+    const client = await LitClient.create(authKey, { litNetwork: LIT_NETWORK.DatilTest });
 
     // Check if client is ready
     console.log('✓ Client initialized, checking if ready...');

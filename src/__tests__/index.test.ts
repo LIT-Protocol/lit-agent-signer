@@ -107,6 +107,21 @@ describe('LitClient Integration Tests', () => {
         expect(result).toHaveProperty('response');
         expect(result.response).toBe('Hello from Lit Protocol!');
       }, 10000);
+
+      it('should execute JavaScript code from IPFS', async () => {
+        // First create a wallet to get a public key
+        const walletInfo = await litClient.createWallet();
+        expect(walletInfo.pkp).toBeDefined();
+
+        const result = await litClient.executeJs({
+          ipfsId: 'QmQwNvbP9YAY4B4wYgFoD6cNnX3udNDBjWC7RqN48GdpmN',
+          jsParams: {
+            publicKey: walletInfo.pkp.publicKey,
+          },
+        });
+        expect(result).toHaveProperty('response');
+        expect(result.response).toBeDefined();
+      }, 30000);
     });
 
     describe('Wallet Operations', () => {
@@ -210,6 +225,21 @@ describe('LitClient Integration Tests', () => {
         expect(result).toHaveProperty('response');
         expect(result.response).toBe('Hello from Lit Protocol!');
       }, 10000);
+
+      it('should execute JavaScript code from IPFS', async () => {
+        // First create a wallet to get a public key
+        const walletInfo = await litClient.createWallet();
+        expect(walletInfo.pkp).toBeDefined();
+
+        const result = await litClient.executeJs({
+          ipfsId: 'QmQwNvbP9YAY4B4wYgFoD6cNnX3udNDBjWC7RqN48GdpmN',
+          jsParams: {
+            publicKey: walletInfo.pkp.publicKey,
+          },
+        });
+        expect(result).toHaveProperty('response');
+        expect(result.response).toBeDefined();
+      }, 30000);
     });
 
     describe('Wallet Operations', () => {
