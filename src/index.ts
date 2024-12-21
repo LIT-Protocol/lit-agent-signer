@@ -12,6 +12,7 @@ import {
   LIT_NETWORKS_KEYS,
   MintWithAuthResponse,
   SigResponse,
+  SessionSigsMap,
 } from '@lit-protocol/types';
 import { LocalStorage } from 'node-localstorage';
 
@@ -21,6 +22,13 @@ import { getSessionSigs } from './utils';
 global.localStorage = new LocalStorage('./lit-session-storage');
 // @ts-expect-error assigning the global to a local variable
 export const localStorage = global.localStorage as LocalStorage;
+
+type ExecuteJsParams = {
+  jsParams: object;
+} & (
+  | { code: string; ipfsId?: never }
+  | { code?: never; ipfsId: string }
+);
 
 export class LitClient {
   litNodeClient: LitJsSdk.LitNodeClientNodeJs | null = null;
@@ -98,27 +106,16 @@ export class LitClient {
   /**
    * Execute JavaScript code
    */
-  async executeJs({
-    code,
-    jsParams,
-  }: {
-    code: string;
-    jsParams: object;
-  }): Promise<ExecuteJsResponse> {
+  async executeJs(params: ExecuteJsParams): Promise<ExecuteJsResponse> {
     if (!this.litNodeClient) {
       throw new Error('LitNodeClient not initialized');
     }
     try {
-      if (!code) {
-        throw new Error('No code provided');
-      }
-
       const sessionSigs = await getSessionSigs(this);
 
       return this.litNodeClient.executeJs({
         sessionSigs,
-        code,
-        jsParams,
+        ...params,
       });
     } catch (error: unknown) {
       if (error instanceof Error) {
